@@ -5,31 +5,30 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.math.BigDecimal;
 
-@Data
-@NoArgsConstructor
 @AllArgsConstructor
+@NoArgsConstructor
+@Data
+@Table(name = "product")
 @Entity
-@Table(name = "user")
-public class User {
+public class Product {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Column(length = 100, nullable = false)
-    private String name;
+    private String description;
 
-    private boolean isEnabled;
+    @Column(length = 20, precision = 20, scale = 2, nullable = false)
+    private BigDecimal price;
 
-    @OneToMany(mappedBy = "user")
-    private List<Sale>  saleList;
-
+    @Column(nullable = false)
+    private int quantity;
 }
