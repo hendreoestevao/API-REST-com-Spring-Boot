@@ -97,7 +97,7 @@ public class CoinRepository {
     }
 
 
-    public List<Coin> getByName(String name) {
+    public List<Coin> getByNameJDBC(String name) {
         Object[] params = new Object[]{name};
         return jdbcTemplate.query(SELECT_BY_NAME, new RowMapper<Coin>() {
             @Override
@@ -114,8 +114,27 @@ public class CoinRepository {
         }, params);
     }
 
+    public List<Coin> getByName(String name) {
+        String jpql = "select c from Coin c where c.name like :name";
+        TypedQuery<Coin> query = entityManager.createQuery(jpql, Coin.class);
+        query.setParameter("name", "%" + name + "%");
 
-    public int deleteById(int id) {
+        return query.getResultList();
+    }
+
+
+    public int deleteByIdJDBC(int id) {
         return jdbcTemplate.update(DELETE, id);
+    }
+
+    @Transactional
+    public boolean deleteById(int id) {
+        Coin coin = entityManager.find(Coin.class, id);
+
+        if (coin == null) {
+            throw new RuntimeException();
+        }
+        entityManager.remove(coin);
+        return true;
     }
 }
