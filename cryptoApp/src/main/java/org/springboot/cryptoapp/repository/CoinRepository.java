@@ -1,5 +1,9 @@
 package org.springboot.cryptoapp.repository;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityTransaction;
+import jakarta.persistence.TypedQuery;
+import jakarta.transaction.Transactional;
 import org.springboot.cryptoapp.dto.CoinTransationDTO;
 import org.springboot.cryptoapp.entity.Coin;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -25,12 +29,30 @@ public class CoinRepository {
 
     private final JdbcTemplate jdbcTemplate;
 
-    public CoinRepository(JdbcTemplate jdbcTemplate) {
+    private final EntityManager entityManager;
+
+    public CoinRepository(EntityManager entityManager, JdbcTemplate jdbcTemplate) {
+        this.entityManager = entityManager;
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public Coin insert(Coin coin) {
+    public Coin insertManual(Coin coin) {
+        EntityTransaction transaction = entityManager.getTransaction();
+        transaction.begin();
+        entityManager.persist(coin);
+        transaction.commit();
+        return coin;
+    }
 
+    //OU
+
+    @Transactional
+    public Coin insert(Coin coin) {
+        entityManager.persist(coin);
+        return coin;
+    }
+
+    public Coin insertJDBC(Coin coin) {
         Object[] params = new Object[]{
                 coin.getName(),
                 coin.getPrice(),
@@ -42,7 +64,20 @@ public class CoinRepository {
         return coin;
     }
 
-    public List<CoinTransationDTO> selectAll() {
+    public Coin updateJDBC(Coin coin) {
+        Object[] params = new Object[]{coin.getName(), coin.getPrice(), coin.getQuantity(), coin.getId()};
+        jdbcTemplate.update(UPDATE, params);
+        return coin;
+    }
+
+    @Transactional
+    public Coin update(Coin coin) {
+        entityManager.merge(coin);
+        return coin;
+    }
+
+
+    public List<CoinTransationDTO> selectAllJDBC() {
         return jdbcTemplate.query(SELECT_ALL, new RowMapper<CoinTransationDTO>() {
             @Override
             public CoinTransationDTO mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -54,6 +89,13 @@ public class CoinRepository {
             }
         });
     }
+
+    public List<CoinTransationDTO> selectAll() {
+        String jpql = "select new org.springboot.cryptoapp.dto.CoinTransationDTO(c.name, sum(c.quantity)) from Coin c group by c.name";
+        TypedQuery<CoinTransationDTO> query = entityManager.createQuery(jpql, CoinTransationDTO.class);
+        return query.getResultList();
+    }
+
 
     public List<Coin> getByName(String name) {
         Object[] params = new Object[]{name};
@@ -70,12 +112,6 @@ public class CoinRepository {
                 return coin;
             }
         }, params);
-    }
-
-    public Coin update(Coin coin) {
-        Object[] params = new Object[]{ coin.getName(), coin.getPrice(), coin.getQuantity(), coin.getId() };
-        jdbcTemplate.update(UPDATE, params);
-        return coin;
     }
 
 
