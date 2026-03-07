@@ -3,7 +3,9 @@ package org.springboot.pdv.service;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
 import org.springboot.pdv.dto.ProductDTO;
+import org.springboot.pdv.dto.ProductInfoDTO;
 import org.springboot.pdv.dto.SaleDTO;
+import org.springboot.pdv.dto.SaleInfoDTO;
 import org.springboot.pdv.entity.ItemSale;
 import org.springboot.pdv.entity.Product;
 import org.springboot.pdv.entity.Sale;
@@ -15,6 +17,7 @@ import org.springboot.pdv.repository.UserRepository;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -41,6 +44,53 @@ public class SaleService {
         ]
     }
      */
+
+    public List<SaleInfoDTO> findAllByMap() {
+
+        return saleRepository.findAll().stream().map(sale -> {
+            SaleInfoDTO saleInfoDTO = new SaleInfoDTO();
+            saleInfoDTO.setSaleId(sale.getId());
+            saleInfoDTO.setUser(sale.getUser().getName());
+            saleInfoDTO.setDate(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+
+            List<ProductInfoDTO> products = sale.getItemSales().stream().map(itemSale -> {
+                ProductInfoDTO productInfoDTO = new ProductInfoDTO();
+                productInfoDTO.setDescription(itemSale.getProduct().getDescription());
+                productInfoDTO.setQuantity(itemSale.getQuantity());
+                return productInfoDTO;
+            }).toList();
+
+            saleInfoDTO.setProducts(products);
+            return saleInfoDTO;
+
+        }).toList();
+    }
+
+
+    public List<SaleInfoDTO> findAll() {
+        return saleRepository.findAll().stream().map(sale -> getSaleInfo(sale)).collect(Collectors.toList());
+    }
+
+    private SaleInfoDTO getSaleInfo(Sale sale) {
+        SaleInfoDTO saleInfoDTO = new SaleInfoDTO();
+        saleInfoDTO.setSaleId(sale.getId());
+        saleInfoDTO.setUser(sale.getUser().getName());
+        saleInfoDTO.setDate(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
+        saleInfoDTO.setProducts(getProductInfo(sale.getItemSales()));
+
+        return saleInfoDTO;
+    }
+
+    private List<ProductInfoDTO> getProductInfo(List<ItemSale> itemSales) {
+        return itemSales.stream().map(itemSale -> {
+            ProductInfoDTO productInfoDTO = new ProductInfoDTO();
+            productInfoDTO.setDescription(itemSale.getProduct().getDescription());
+            productInfoDTO.setQuantity(itemSale.getQuantity());
+            return productInfoDTO;
+
+        }).collect(Collectors.toList());
+
+    }
 
     @Transactional
     public long save(SaleDTO saleDTO) {
@@ -128,5 +178,11 @@ public class SaleService {
             itemSales.add(itemSale);
         }
         return itemSales;
+    }
+
+    public SaleInfoDTO getById(Long id) {
+        Sale sale = saleRepository.findById(id).get();
+        return getSaleInfo(sale);
+
     }
 }
