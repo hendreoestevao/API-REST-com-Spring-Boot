@@ -16,12 +16,15 @@ import org.springboot.pdv.repository.ProductRepository;
 import org.springboot.pdv.repository.SaleRepository;
 import org.springboot.pdv.repository.UserRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 @Service
 @AllArgsConstructor
@@ -49,49 +52,73 @@ public class SaleService {
     public List<SaleInfoDTO> findAllByMap() {
 
         return saleRepository.findAll().stream().map(sale -> {
-            SaleInfoDTO saleInfoDTO = new SaleInfoDTO();
-            saleInfoDTO.setSaleId(sale.getId());
-            saleInfoDTO.setUser(sale.getUser().getName());
-            saleInfoDTO.setDate(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
 
-            List<ProductInfoDTO> products = sale.getItemSales().stream().map(itemSale -> {
-                ProductInfoDTO productInfoDTO = new ProductInfoDTO();
-                productInfoDTO.setId(itemSale.getProduct().getId());
-                productInfoDTO.setDescription(itemSale.getProduct().getDescription());
-                productInfoDTO.setQuantity(itemSale.getQuantity());
-                return productInfoDTO;
-            }).toList();
+            List<ProductInfoDTO> products = sale.getItemSales().stream()
+                    .map(itemSale -> ProductInfoDTO.builder()
+                            .id(itemSale.getProduct().getId())
+                            .description(itemSale.getProduct().getDescription())
+                            .quantity(itemSale.getQuantity())
+                            .build())
+                    .toList();
 
-            saleInfoDTO.setProducts(products);
-            return saleInfoDTO;
-
+            return SaleInfoDTO.builder()
+                    .saleId(sale.getId())
+                    .user(sale.getUser().getName())
+                    .date(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                    .products(products)
+                    .build();
         }).toList();
+    }
+
+    //ou posso fazer assim
+
+    public List<SaleInfoDTO> findAllByMapRefactor() {
+
+        return saleRepository.findAll()
+                .stream()
+                .map(sale -> SaleInfoDTO.builder()
+                        .saleId(sale.getId())
+                        .user(sale.getUser().getName())
+                        .date(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                        .products(
+                                sale.getItemSales().stream()
+                                        .map(itemSale -> ProductInfoDTO.builder()
+                                                .id(itemSale.getProduct().getId())
+                                                .description(itemSale.getProduct().getDescription())
+                                                .quantity(itemSale.getQuantity())
+                                                .build()
+                                        ).toList()
+                        ).build()).toList();
     }
 
 
     public List<SaleInfoDTO> findAll() {
-        return saleRepository.findAll().stream().map(sale -> getSaleInfo(sale)).collect(Collectors.toList());
+        return saleRepository.findAll().stream().map(this::getSaleInfo).collect(toList());
     }
 
     private SaleInfoDTO getSaleInfo(Sale sale) {
-        SaleInfoDTO saleInfoDTO = new SaleInfoDTO();
-        saleInfoDTO.setSaleId(sale.getId());
-        saleInfoDTO.setUser(sale.getUser().getName());
-        saleInfoDTO.setDate(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")));
-        saleInfoDTO.setProducts(getProductInfo(sale.getItemSales()));
-
-        return saleInfoDTO;
+        return SaleInfoDTO.builder()
+                .saleId(sale.getId())
+                .user(sale.getUser().getName())
+                .date(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
+                .products(getProductInfo(sale.getItemSales())).
+                build();
     }
 
     private List<ProductInfoDTO> getProductInfo(List<ItemSale> itemSales) {
-        return itemSales.stream().map(itemSale -> {
-            ProductInfoDTO productInfoDTO = new ProductInfoDTO();
-            productInfoDTO.setId(itemSale.getProduct().getId());
-            productInfoDTO.setDescription(itemSale.getProduct().getDescription());
-            productInfoDTO.setQuantity(itemSale.getQuantity());
-            return productInfoDTO;
 
-        }).collect(Collectors.toList());
+        if (CollectionUtils.isEmpty(itemSales)) {
+            return Collections.emptyList();
+        }
+
+        return itemSales.stream().map(itemSale ->
+                ProductInfoDTO.builder()
+                        .id(itemSale.getProduct().getId())
+                        .description(itemSale.getProduct().getDescription())
+                        .quantity(itemSale.getQuantity())
+                        .build()
+
+        ).collect(toList());
 
     }
 
@@ -181,7 +208,7 @@ public class SaleService {
                     productRepository.save(product);
 
                     return itemSale;
-                }).collect(Collectors.toList());
+                }).collect(toList());
 
 
     }
