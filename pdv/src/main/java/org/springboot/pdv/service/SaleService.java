@@ -18,6 +18,7 @@ import org.springboot.pdv.repository.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -51,6 +52,7 @@ public class SaleService {
 
     public List<SaleInfoDTO> findAllByMap() {
 
+
         return saleRepository.findAll().stream().map(sale -> {
 
             List<ProductInfoDTO> products = sale.getItemSales().stream()
@@ -58,14 +60,17 @@ public class SaleService {
                             .id(itemSale.getProduct().getId())
                             .description(itemSale.getProduct().getDescription())
                             .quantity(itemSale.getQuantity())
+                            .price(itemSale.getProduct().getPrice())
                             .build())
                     .toList();
+            BigDecimal total = getTotal(products);
 
             return SaleInfoDTO.builder()
                     .saleId(sale.getId())
                     .user(sale.getUser().getName())
                     .date(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
                     .products(products)
+                    .total(total)
                     .build();
         }).toList();
     }
@@ -97,12 +102,26 @@ public class SaleService {
     }
 
     private SaleInfoDTO getSaleInfo(Sale sale) {
+
+        var products = getProductInfo(sale.getItemSales());
+        BigDecimal total = getTotal(products);
+
         return SaleInfoDTO.builder()
                 .saleId(sale.getId())
                 .user(sale.getUser().getName())
                 .date(sale.getDate().format(DateTimeFormatter.ofPattern("dd/MM/yyyy")))
-                .products(getProductInfo(sale.getItemSales())).
-                build();
+                .products(products)
+                .total(total)
+                .build();
+    }
+
+    private BigDecimal getTotal(List<ProductInfoDTO> products) {
+        BigDecimal total = new BigDecimal(0);
+        for (int i = 0; i < products.size(); i++) {
+            total = total.add(products.get(i).getPrice().multiply(new BigDecimal(products.get(i).getQuantity())));
+        }
+
+        return total;
     }
 
     private List<ProductInfoDTO> getProductInfo(List<ItemSale> itemSales) {
@@ -116,6 +135,7 @@ public class SaleService {
                         .id(itemSale.getProduct().getId())
                         .description(itemSale.getProduct().getDescription())
                         .quantity(itemSale.getQuantity())
+                        .price(itemSale.getProduct().getPrice())
                         .build()
 
         ).collect(toList());
