@@ -1,7 +1,6 @@
 package org.springboot.pdv.controller;
 
 import org.springboot.pdv.dto.ResponseDTO;
-import org.springboot.pdv.dto.SaleInfoDTO;
 import org.springboot.pdv.dto.UserDTO;
 import org.springboot.pdv.entity.User;
 import org.springboot.pdv.repository.UserRepository;
@@ -18,7 +17,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.util.List;
-import java.util.Optional;
 
 @Controller
 @RequestMapping("/user")
@@ -56,11 +54,7 @@ public class UserController {
 
     @GetMapping("{id}")
     public ResponseEntity<UserDTO> getById(@PathVariable Long id) {
-        try {
-            return new ResponseEntity<>(userService.findById(id), HttpStatus.OK);
-        }catch (Exception e) {
-            return new ResponseEntity(new ResponseDTO(e.getMessage()),HttpStatus.BAD_REQUEST);
-        }
+        return new ResponseEntity<>(userService.findById(id), HttpStatus.OK);
     }
 
     @DeleteMapping("{id}")
