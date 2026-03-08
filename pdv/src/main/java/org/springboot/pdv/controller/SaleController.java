@@ -1,8 +1,8 @@
 package org.springboot.pdv.controller;
 
+import org.springboot.pdv.dto.ResponseDTO;
 import org.springboot.pdv.dto.SaleDTO;
 import org.springboot.pdv.dto.SaleInfoDTO;
-import org.springboot.pdv.entity.Sale;
 import org.springboot.pdv.repository.SaleRepository;
 import org.springboot.pdv.service.SaleService;
 import org.springframework.http.HttpStatus;
@@ -36,9 +36,9 @@ public class SaleController {
     @GetMapping("{id}")
     public ResponseEntity<SaleInfoDTO> getSaleById(@PathVariable Long id) {
         try {
-            return new ResponseEntity<SaleInfoDTO>(saleService.getById(id), HttpStatus.OK);
+            return new ResponseEntity<>(saleService.getById(id), HttpStatus.OK);
         }catch (Exception e){
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity(new ResponseDTO(e.getMessage()),HttpStatus.NOT_FOUND);
         }
     }
 
@@ -46,10 +46,9 @@ public class SaleController {
     @PostMapping
     public ResponseEntity<String> postSale(@RequestBody SaleDTO saleDTO) {
         try {
-            long id = saleService.save(saleDTO);
-            return new ResponseEntity<>("Venda realizada com sucesso: " + id , HttpStatus.OK);
+            return new ResponseEntity(saleService.save(saleDTO) ,HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity(new ResponseDTO(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
     }
 

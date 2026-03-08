@@ -10,6 +10,7 @@ import org.springboot.pdv.entity.ItemSale;
 import org.springboot.pdv.entity.Product;
 import org.springboot.pdv.entity.Sale;
 import org.springboot.pdv.entity.User;
+import org.springboot.pdv.exceptions.NoItemException;
 import org.springboot.pdv.repository.ItemSaleRepository;
 import org.springboot.pdv.repository.ProductRepository;
 import org.springboot.pdv.repository.SaleRepository;
@@ -55,6 +56,7 @@ public class SaleService {
 
             List<ProductInfoDTO> products = sale.getItemSales().stream().map(itemSale -> {
                 ProductInfoDTO productInfoDTO = new ProductInfoDTO();
+                productInfoDTO.setId(itemSale.getProduct().getId());
                 productInfoDTO.setDescription(itemSale.getProduct().getDescription());
                 productInfoDTO.setQuantity(itemSale.getQuantity());
                 return productInfoDTO;
@@ -84,6 +86,7 @@ public class SaleService {
     private List<ProductInfoDTO> getProductInfo(List<ItemSale> itemSales) {
         return itemSales.stream().map(itemSale -> {
             ProductInfoDTO productInfoDTO = new ProductInfoDTO();
+            productInfoDTO.setId(itemSale.getProduct().getId());
             productInfoDTO.setDescription(itemSale.getProduct().getDescription());
             productInfoDTO.setQuantity(itemSale.getQuantity());
             return productInfoDTO;
@@ -91,6 +94,13 @@ public class SaleService {
         }).collect(Collectors.toList());
 
     }
+
+    /*
+    quantidade = 10
+    qnt_vendida = 11
+    erro
+     */
+
 
     @Transactional
     public long save(SaleDTO saleDTO) {
@@ -148,13 +158,27 @@ public class SaleService {
 
     private List<ItemSale> getItemSales(List<ProductDTO> products) {
 
+        if (products.isEmpty()) {
+            throw new NoItemException("No items found");
+        }
+
         return products.stream().map(
                 item -> {
-                    Product product = productRepository.getReferenceById(item.getProductid());
+                    Product product = productRepository.findById(item.getProductid())
+                            .orElseThrow(() -> new RuntimeException("Product not found"));
 
                     ItemSale itemSale = new ItemSale();
                     itemSale.setProduct(product);
                     itemSale.setQuantity(item.getQuantity());
+
+                    if (product.getQuantity() == 0 || product.getQuantity() < item.getQuantity()) {
+                        throw new NoItemException(String.format("Produto sem estoque %s é a quantidade de produtos " +
+                                "em estoque.", product.getQuantity()));
+                    }
+
+                    int total = product.getQuantity() - item.getQuantity();
+                    product.setQuantity(total);
+                    productRepository.save(product);
 
                     return itemSale;
                 }).collect(Collectors.toList());
@@ -181,7 +205,7 @@ public class SaleService {
     }
 
     public SaleInfoDTO getById(Long id) {
-        Sale sale = saleRepository.findById(id).get();
+        Sale sale = saleRepository.findById(id).orElseThrow(() -> new RuntimeException("Sale not found"));
         return getSaleInfo(sale);
 
     }

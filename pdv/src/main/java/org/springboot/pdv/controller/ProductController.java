@@ -1,5 +1,6 @@
 package org.springboot.pdv.controller;
 
+import org.springboot.pdv.dto.ResponseDTO;
 import org.springboot.pdv.entity.Product;
 import org.springboot.pdv.repository.ProductRepository;
 import org.springframework.http.HttpStatus;
@@ -45,7 +46,7 @@ public class ProductController {
             }
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity(new ResponseDTO(e.getMessage()),HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -56,7 +57,7 @@ public class ProductController {
            return new ResponseEntity<>("Produto deletado com sucesso!", HttpStatus.OK);
 
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity(new ResponseDTO(e.getMessage()),HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

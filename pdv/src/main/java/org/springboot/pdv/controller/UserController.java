@@ -1,7 +1,11 @@
 package org.springboot.pdv.controller;
 
+import org.springboot.pdv.dto.ResponseDTO;
+import org.springboot.pdv.dto.SaleInfoDTO;
+import org.springboot.pdv.dto.UserDTO;
 import org.springboot.pdv.entity.User;
 import org.springboot.pdv.repository.UserRepository;
+import org.springboot.pdv.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -20,44 +24,52 @@ import java.util.Optional;
 @RequestMapping("/user")
 public class UserController {
 
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public UserController(UserRepository userRepository) {
-        this.userRepository = userRepository;
+    public UserController(UserRepository userRepository, UserService userService) {
+        this.userService = userService;
     }
 
     @GetMapping
-    public ResponseEntity<List<User>> getAll() {
-        return new ResponseEntity<>(userRepository.findAll(), HttpStatus.OK);
+    public ResponseEntity<List<UserDTO>> getAll() {
+        return new ResponseEntity<>(userService.findAll(), HttpStatus.OK);
     }
 
     @PostMapping
-    public ResponseEntity<User> save(@RequestBody User user) {
+    public ResponseEntity<UserDTO> save(@RequestBody User user) {
         try {
             user.setEnabled(true);
-            return new ResponseEntity<>(userRepository.save(user), HttpStatus.OK);
+            return new ResponseEntity<>(userService.save(user), HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity(new ResponseDTO(e.getMessage()),HttpStatus.BAD_REQUEST);
         }
     }
 
     @PutMapping
-    public ResponseEntity<User> update(@RequestBody User user) {
-        Optional<User> optionalUser = userRepository.findById(user.getId());
-        if (optionalUser.isPresent()) {
-            userRepository.save(user);
-            return new ResponseEntity<>(user, HttpStatus.OK);
+    public ResponseEntity<UserDTO> update(@RequestBody User user) {
+        try {
+            return new ResponseEntity<>(userService.update(user), HttpStatus.OK);
+        }catch (Exception e) {
+            return new ResponseEntity(new ResponseDTO(e.getMessage()), HttpStatus.BAD_REQUEST);
         }
-        return ResponseEntity.notFound().build();
+    }
+
+    @GetMapping("{id}")
+    public ResponseEntity<UserDTO> getById(@PathVariable Long id) {
+        try {
+            return new ResponseEntity<>(userService.findById(id), HttpStatus.OK);
+        }catch (Exception e) {
+            return new ResponseEntity(new ResponseDTO(e.getMessage()),HttpStatus.BAD_REQUEST);
+        }
     }
 
     @DeleteMapping("{id}")
     public ResponseEntity delete(@PathVariable Long id) {
         try {
-            userRepository.deleteById(id);
+            userService.deleteById(id);
             return new ResponseEntity<>("Usúario removido com sucesso!", HttpStatus.OK);
         } catch (Exception e) {
-            return new ResponseEntity<>(e.getMessage(),HttpStatus.INTERNAL_SERVER_ERROR);
+            return new ResponseEntity<>(new ResponseDTO(e.getMessage()),HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }
