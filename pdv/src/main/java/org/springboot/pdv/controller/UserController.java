@@ -1,5 +1,6 @@
 package org.springboot.pdv.controller;
 
+import jakarta.validation.Valid;
 import org.springboot.pdv.dto.ResponseDTO;
 import org.springboot.pdv.dto.UserDTO;
 import org.springboot.pdv.entity.User;
@@ -34,7 +35,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<UserDTO> save(@RequestBody User user) {
+    public ResponseEntity<UserDTO> save(@Valid @RequestBody UserDTO user) {
         try {
             user.setEnabled(true);
             return new ResponseEntity<>(userService.save(user), HttpStatus.OK);
@@ -44,7 +45,7 @@ public class UserController {
     }
 
     @PutMapping
-    public ResponseEntity<UserDTO> update(@RequestBody User user) {
+    public ResponseEntity<UserDTO> update(@Valid @RequestBody UserDTO user) {
         try {
             return new ResponseEntity<>(userService.update(user), HttpStatus.OK);
         }catch (Exception e) {

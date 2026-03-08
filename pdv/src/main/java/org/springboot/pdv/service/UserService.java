@@ -1,5 +1,6 @@
 package org.springboot.pdv.service;
 
+import org.modelmapper.ModelMapper;
 import org.springboot.pdv.dto.ProductInfoDTO;
 import org.springboot.pdv.dto.UserDTO;
 import org.springboot.pdv.entity.User;
@@ -17,6 +18,8 @@ public class UserService {
 
     private final UserRepository userRepository;
 
+    private ModelMapper modelMapper = new ModelMapper();
+
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
@@ -25,7 +28,7 @@ public class UserService {
         return userRepository.findAll().stream().map(user -> {
             UserDTO userDTO = new UserDTO();
             userDTO.setUserId(user.getId());
-            userDTO.setUsername(user.getName());
+            userDTO.setName(user.getName());
             userDTO.setEnabled(user.isEnabled());
 
             List<ProductInfoDTO> products = user.getSaleList().stream().flatMap(sale -> sale.getItemSales().stream().map(itemSale -> {
@@ -41,7 +44,10 @@ public class UserService {
         }).collect(Collectors.toList());
     }
 
-    public UserDTO save(User user) {
+    public UserDTO save(UserDTO dto) {
+
+        User user = modelMapper.map(dto, User.class);
+        user.setId(null);
 
         User savedUser = userRepository.save(user);
 
@@ -58,14 +64,15 @@ public class UserService {
         return new UserDTO(user.getId(), user.getName(), user.isEnabled(), null);
     }
 
-    public UserDTO update(User user) {
-        Optional<User> optionalUser = userRepository.findById(user.getId());
-        if (!optionalUser.isPresent()) {
-            throw new NoItemException("Usuario nao encontrado");
-        }
+    public UserDTO update(UserDTO dto) {
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(() -> new NoItemException("Usuário não encontrado"));
 
-        userRepository.save(user);
-        return new UserDTO(user.getId(), user.getName(), user.isEnabled(), null);
+        modelMapper.map(dto, user);
+
+        User updatedUser = userRepository.save(user);
+
+        return modelMapper.map(updatedUser, UserDTO.class);
     }
 
 
