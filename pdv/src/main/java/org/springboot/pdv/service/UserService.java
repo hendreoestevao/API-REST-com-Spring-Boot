@@ -3,9 +3,11 @@ package org.springboot.pdv.service;
 import org.modelmapper.ModelMapper;
 import org.springboot.pdv.dto.ProductInfoDTO;
 import org.springboot.pdv.dto.UserDTO;
+import org.springboot.pdv.dto.UserResponseDTO;
 import org.springboot.pdv.entity.User;
 import org.springboot.pdv.exceptions.NoItemException;
 import org.springboot.pdv.repository.UserRepository;
+import org.springboot.pdv.security.SecurityConfig;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.stereotype.Service;
 
@@ -24,34 +26,20 @@ public class UserService {
         this.userRepository = userRepository;
     }
 
-    public List<UserDTO> findAll() {
-        return userRepository.findAll().stream().map(user -> {
-            UserDTO userDTO = new UserDTO();
-            userDTO.setUserId(user.getId());
-            userDTO.setName(user.getName());
-            userDTO.setEnabled(user.isEnabled());
-
-            List<ProductInfoDTO> products = user.getSaleList().stream().flatMap(sale -> sale.getItemSales().stream().map(itemSale -> {
-                ProductInfoDTO productInfoDTO = new ProductInfoDTO();
-                productInfoDTO.setId(itemSale.getProduct().getId());
-                productInfoDTO.setDescription(itemSale.getProduct().getDescription());
-                productInfoDTO.setQuantity(itemSale.getQuantity());
-                return productInfoDTO;
-            })).toList();
-
-            userDTO.setProductInfo(products);
-            return userDTO;
-        }).collect(Collectors.toList());
+    public List<UserResponseDTO> findAll() {
+        return userRepository.findAll().stream().map(user ->
+            new UserResponseDTO(user.getId(), user.getName(), user.getUsername(), user.isEnabled())).
+                collect(Collectors.toList());
     }
 
     public UserDTO save(UserDTO dto) {
-
+        dto.setPassword(SecurityConfig.passwordEncoder().encode(dto.getPassword()));
         User user = modelMapper.map(dto, User.class);
         user.setId(null);
 
         User savedUser = userRepository.save(user);
 
-        return new UserDTO(savedUser.getId(), savedUser.getName(), savedUser.isEnabled(), null);
+        return new UserDTO(savedUser.getId(), savedUser.getName(), savedUser.getUsername(), dto.getPassword(), savedUser.isEnabled());
     }
 
     public UserDTO findById(Long id) {
@@ -61,10 +49,11 @@ public class UserService {
         }
 
         User user = optionalUser.get();
-        return new UserDTO(user.getId(), user.getName(), user.isEnabled(), null);
+        return new UserDTO(user.getId(), user.getName(), user.getUsername(), user.getPassword(), user.isEnabled());
     }
 
     public UserDTO update(UserDTO dto) {
+        dto.setPassword(SecurityConfig.passwordEncoder().encode(dto.getPassword()));
         User user = userRepository.findById(dto.getUserId())
                 .orElseThrow(() -> new NoItemException("Usuário não encontrado"));
 
@@ -81,6 +70,10 @@ public class UserService {
             throw new NoItemException("Usuario nao encontrado");
         }
         userRepository.deleteById(id);
+    }
+
+    public User getByUserName(String username){
+        return userRepository.findUserByUsername(username);
     }
 
 }

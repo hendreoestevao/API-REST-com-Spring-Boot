@@ -3,6 +3,7 @@ package org.springboot.pdv.controller;
 import jakarta.validation.Valid;
 import org.springboot.pdv.dto.ResponseDTO;
 import org.springboot.pdv.dto.UserDTO;
+import org.springboot.pdv.dto.UserResponseDTO;
 import org.springboot.pdv.entity.User;
 import org.springboot.pdv.repository.UserRepository;
 import org.springboot.pdv.service.UserService;
@@ -30,7 +31,7 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<List<UserDTO>> getAll() {
+    public ResponseEntity<List<UserResponseDTO>> getAll() {
         return new ResponseEntity<>(userService.findAll(), HttpStatus.OK);
     }
 
