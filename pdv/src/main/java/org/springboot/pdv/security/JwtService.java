@@ -1,8 +1,10 @@
 package org.springboot.pdv.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
@@ -25,12 +27,30 @@ public class JwtService {
         currentTimeNow.add(Calendar.MINUTE, expiration);
         Date expirationDate = currentTimeNow.getTime();
 
-        SecretKey secretKey = Keys.hmacShaKeyFor(key.getBytes(StandardCharsets.UTF_8));
+        SecretKey secretKey = getSecretKey();
 
         return  Jwts.builder()
                 .setSubject(username)
                 .setExpiration(expirationDate)
                 .signWith(secretKey)
                 .compact();
+    }
+
+    private @NonNull SecretKey getSecretKey() {
+        return Keys.hmacShaKeyFor(key.getBytes(StandardCharsets.UTF_8));
+    }
+
+
+    private Claims parseToken(String token) {
+        SecretKey secretKey = getSecretKey();
+
+        return Jwts.parserBuilder()
+                .setSigningKey(secretKey)
+                .build()
+                .parseClaimsJws(token).getBody();
+    }
+
+    public String getUserName(String token) {
+        return parseToken(token).getSubject();
     }
 }

@@ -18,6 +18,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.filter.OncePerRequestFilter;
 
 @Configuration
 @EnableWebSecurity
@@ -26,6 +28,9 @@ public class SecurityConfig {
 
     @Autowired
     private CustomUserDetailService userDetailService;
+
+    @Autowired
+    private JwtService jwtService;
 
     @Bean
     public static BCryptPasswordEncoder passwordEncoder() {
@@ -57,10 +62,13 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/sing-up").permitAll()
                         .anyRequest().authenticated()
                 )
-                .httpBasic(Customizer.withDefaults())
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
-
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(jwtFilter(), UsernamePasswordAuthenticationFilter.class);
         return http.build();
+    }
+
+    public OncePerRequestFilter jwtFilter() throws Exception {
+        return new JwtAuthFilter(jwtService, userDetailService);
     }
 
     @Bean
