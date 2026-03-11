@@ -1,16 +1,14 @@
 package org.springboot.pdv;
 
-import org.springboot.pdv.entity.User;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 
 @SpringBootApplication
-public class PdvApplication {
+public class PdvApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
         SpringApplication.run(PdvApplication.class, args);
-
-
     }
 
 }
